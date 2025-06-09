@@ -10,8 +10,21 @@ app.get('/', (req, res) => {
   res.send('API is running!');
 });
 
-app.get('/yash', (req, res) => {
-  res.send('Bhai kch seekh le');
+app.get('/test/ping' , (req, res) =>{
+  res.json({message : 'pong'})
+})
+
+app.post('/api/summarize', async (req, res) => {
+   const { url } = req.body;
+  // For now, just return a dummy summary
+  // Later, you'll add actual video processing here
+  if (!url || typeof url !== 'string') {
+    return res.status(400).json({ error: 'Invalid URL' });
+  }
+
+  // TODO: Add video processing & summarization here
+  // For demo, just echo back
+  res.json({ summary: `Summary for: ${url}` });
 });
 
 const PORT = process.env.PORT || 5000;
