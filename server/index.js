@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const { isYoutubeURL, extractVideoId } = require("./utils/youtube");
+const { YoutubeLoader } = require("@langchain/community/document_loaders/web/youtube");
 
 const app = express();
 app.use(cors());
@@ -22,7 +23,7 @@ app.post("/api/summarize", async (req, res) => {
   const { url } = req.body;
 
   //1.Validate url
-  if (!url || typeof url != 'string')
+  if (!url || typeof url != "string")
     return res.status(400).json({ error: "Invalid URL" });
 
   if (!isYoutubeURL(url))
@@ -31,11 +32,35 @@ app.post("/api/summarize", async (req, res) => {
       .json({ error: "Currently only YouTube URLs are supported." });
 
   //Extract video id
-  const videoId = extractVideoId(url);
-  if (!videoId) return res.status(400).json({ error: "Invalid Youtube URL!" });
+  // const videoId = extractVideoId(url);
+  // if (!videoId) return res.status(400).json({ error: "Invalid Youtube URL!" });
 
-  // For now, just respond with videoId (test step)
-  res.json({ summary: `Valid YouTube link! Video ID: ${videoId}` });
+  try {
+    const loader = YoutubeLoader.createFromUrl(url, {
+      language: "en",
+      addVideoInfo: true,
+    });
+    const docs = await loader.load();
+    if (
+      !docs.length ||
+      !docs[0].pageContent ||
+      docs[0].pageContent.trim().length === 0
+    ) {
+      return res
+        .status(404)
+        .json({ error: "No transcript found for this video." });
+    }
+    const transcript = docs[0].pageContent;
+    // Optionally, you can slice the transcript for a preview
+    res.json({
+      summary: `Transcript fetched! First 100 chars: ${transcript.slice(0, 1000)}...`,
+      // or just summary: transcript
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ error: "Sorry! Failed to fetch transcript for this video." });
+  }
 });
 
 const PORT = process.env.PORT || 5000;

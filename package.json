@@ -13,5 +13,10 @@
   "description": "",
   "devDependencies": {
     "concurrently": "^9.1.2"
+  },
+  "dependencies": {
+    "@langchain/community": "^0.3.46",
+    "@langchain/core": "^0.3.58",
+    "youtubei.js": "^14.0.0"
   }
 }
