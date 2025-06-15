@@ -2,7 +2,13 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const { isYoutubeURL, extractVideoId } = require("./utils/youtube");
-const { YoutubeLoader } = require("@langchain/community/document_loaders/web/youtube");
+const {YoutubeLoader} = require("@langchain/community/document_loaders/web/youtube");
+const { OpenAI } = require("openai"); //AI integration for generating summary
+
+//setting up openai obj
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 const app = express();
 app.use(cors());
@@ -51,12 +57,41 @@ app.post("/api/summarize", async (req, res) => {
         .json({ error: "No transcript found for this video." });
     }
     const transcript = docs[0].pageContent;
+
     // Optionally, you can slice the transcript for a preview
-    res.json({
-      summary: `Transcript fetched! First 100 chars: ${transcript.slice(0, 1000)}...`,
-      // or just summary: transcript
-    });
-  } catch (err) {
+    // res.json({
+    //   summary: `Transcript fetched! First 100 chars: ${transcript.slice(0, 1000)}...`,
+    //   or just summary: transcript
+    // });
+
+    const trimmedTranscript = transcript.slice(0, 10000); //get first 10k words
+
+    //compose prompt for AI
+
+    const prompt = `Summarize the following in **around 100 words** : 
+    ---
+    ${trimmedTranscript}`;
+
+    //Call OpenAI API
+    try {
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4.1-nano",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.5,
+      });
+
+      const summary =
+        completion.choices[0]?.message?.content?.trim() ||
+        "No summary generated.";
+
+      res.json({ summary });
+
+    } catch (summarizrErr) {
+      console.error("OpenAI error : ", summarizrErr);
+      res.status(500).json({ error: "Failed to generate summary!" });
+    }
+  } 
+  catch (err) {
     res
       .status(500)
       .json({ error: "Sorry! Failed to fetch transcript for this video." });
