@@ -1,11 +1,13 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const { isYoutubeURL, extractVideoId } = require("./utils/youtube");
-const { YoutubeLoader } = require("@langchain/community/document_loaders/web/youtube");
-const { OpenAI } = require("openai"); //AI integration for generating summary
+
+const {
+  YoutubeLoader,
+} = require("@langchain/community/document_loaders/web/youtube");
 const { splitBySentence } = require("./utils/textUtils");
 const { getSummaryFromOpenAI } = require("./utils/openai");
+const { detectPlatform } = require("./utils/detectPlatform");
 
 const app = express();
 app.use(cors());
@@ -25,113 +27,98 @@ app.get("/test/ping", (req, res) => {
 app.post("/api/summarize", async (req, res) => {
   const { url } = req.body;
 
-  //1.Validate url
-  if (!url || typeof url != "string")
+  // 1. Validate URL
+  if (!url || typeof url !== "string") {
     return res.status(400).json({ error: "Invalid URL" });
+  }
 
-  if (!isYoutubeURL(url))
-    return res
-      .status(400)
-      .json({ error: "Currently only YouTube URLs are supported." });
+  // 2. Validate URL structure
 
-  //Extract video id
-  // const videoId = extractVideoId(url);
-  // if (!videoId) return res.status(400).json({ error: "Invalid Youtube URL!" });
-
-  try {
-    const loader = YoutubeLoader.createFromUrl(url, {
-      language: "en",
-      addVideoInfo: true,
-    });
-    const docs = await loader.load();
-    if (
-      !docs.length ||
-      !docs[0].pageContent ||
-      docs[0].pageContent.trim().length === 0
-    ) {
-      return res
-        .status(404)
-        .json({ error: "No transcript found for this video." });
+  function isValidURL(url) {
+    try {
+      new URL(url);
+      return true;
+    } catch (error) {
+      return false;
     }
-    const transcript = docs[0].pageContent;
+  }
 
-    // Optionally, you can slice the transcript for a preview
-    // res.json({
-    //   summary: `Transcript fetched! First 100 chars: ${transcript.slice(0, 1000)}...`,
-    //   or just summary: transcript
-    // });
+  if (!isValidURL(url)) {
+    return res.status(400).json({ error: "Invalid URL" });
+  }
 
-    // const trimmedTranscript = transcript.slice(0, 10000); //get first 10k words
+  // 3. Detect platform
+  const platform = detectPlatform(url);
 
-    //compose prompt for AI
-
-    // const prompt = `Summarize the following in **around 100 words** :
-    // ---
-    // ${trimmedTranscript}`;
-
-    // //Call OpenAI API
-    // try {
-    //   const completion = await openai.chat.completions.create({
-    //     model: "gpt-4.1-nano",
-    //     messages: [{ role: "user", content: prompt }],
-    //     temperature: 0.5,
-    //   });
-
-    //   const summary =
-    //     completion.choices[0]?.message?.content?.trim() ||
-    //     "No summary generated.";
-
-    //   res.json({ summary });
-
-    // } catch (summarizrErr) {
-    //   console.error("OpenAI error : ", summarizrErr);
-    //   res.status(500).json({ error: "Failed to generate summary!" });
-    // }
-
-    // new -- Add changes to generate accurate summaries for both short and long format videos
-
-    const MAX_TOKENS = 9000; // ~10k chars
-
-    if (transcript.length < MAX_TOKENS) {
-      // SHORT video: summarize directly
-      const prompt = `Summarize the following in around 100 words:\n---\n${transcript}`;
+  switch (platform) {
+    case "youtube":
+      // Existing YouTube summarization logic here:
       try {
-        const summary = await getSummaryFromOpenAI(prompt);
-        return res.json({ summary });
-      } catch (summarizrErr) {
-        console.error("OpenAI error : ", summarizrErr);
-        return res.status(500).json({ error: "Failed to generate summary!" });
-      }
-    } else {
-      // LONG video: hierarchical summarization
-      const chunks = splitBySentence(transcript, MAX_TOKENS);
-      const chunkSummaries = [];
-      for (const chunk of chunks) {
-        const chunkPrompt = `Summarize the following in around 100 words:\n---\n${chunk}`;
-        try {
-          const chunkSummary = await getSummaryFromOpenAI(chunkPrompt);
-          chunkSummaries.push(chunkSummary);
-        } catch (err) {
-          chunkSummaries.push(""); // Avoid breakage if one chunk fails
+        const loader = YoutubeLoader.createFromUrl(url, {
+          language: "en",
+          addVideoInfo: true,
+        });
+        const docs = await loader.load();
+        if (
+          !docs.length ||
+          !docs[0].pageContent ||
+          docs[0].pageContent.trim().length === 0
+        ) {
+          return res
+            .status(404)
+            .json({ error: "No transcript found for this video." });
         }
+        const transcript = docs[0].pageContent;
+        const MAX_TOKENS = 9000;
+
+        if (transcript.length < MAX_TOKENS) {
+          const prompt = `Summarize the following in around 100 words:\n---\n${transcript}`;
+          const summary = await getSummaryFromOpenAI(prompt);
+          return res.json({ summary });
+        } else {
+          // LONG video logic
+          const chunks = splitBySentence(transcript, MAX_TOKENS);
+          const chunkSummaries = [];
+          for (const chunk of chunks) {
+            const chunkPrompt = `Summarize the following in around 100 words:\n---\n${chunk}`;
+            try {
+              const chunkSummary = await getSummaryFromOpenAI(chunkPrompt);
+              chunkSummaries.push(chunkSummary);
+            } catch (err) {
+              chunkSummaries.push("");
+            }
+          }
+          const finalPrompt = `Combine and summarize the following summaries in around 100 words, preserving the main ideas:\n---\n${chunkSummaries.join(
+            "\n\n"
+          )}`;
+          const finalSummary = await getSummaryFromOpenAI(finalPrompt);
+          return res.json({ summary: finalSummary });
+        }
+      } catch (err) {
+        console.error("Transcript loader error: ", err);
+        return res
+          .status(500)
+          .json({ error: "Sorry! Failed to fetch transcript for this video." });
       }
-      // Final summary of summaries
-      const finalPrompt = `Combine and summarize the following summaries in around 100 words, preserving the main ideas:\n---\n${chunkSummaries.join(
-        "\n\n"
-      )}`;
-      try {
-        const finalSummary = await getSummaryFromOpenAI(finalPrompt);
-        return res.json({ summary: finalSummary });
-      } catch (summarizrErr) {
-        console.error("OpenAI error : ", summarizrErr);
-        return res.status(500).json({ error: "Failed to generate summary!" });
-      }
-    }
-  } catch (err) {
-    console.error("Transcript loader error: ", err);
-    res
-      .status(500)
-      .json({ error: "Sorry! Failed to fetch transcript for this video." });
+
+    // We can add cases for other video types later...
+
+    case "coming-soon":
+      return res.status(501).json({
+        error:
+          "This video platform is coming soon! Only YouTube is supported for now.",
+      });
+
+    case "not-a-video":
+      return res.status(400).json({
+        error: "Please enter a video URL.",
+      });
+
+    default:
+      return res.status(501).json({
+        error:
+          "This video platform is coming soon! Only YouTube is supported for now.",
+      });
   }
 });
 
