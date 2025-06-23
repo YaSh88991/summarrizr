@@ -23,8 +23,8 @@ app.get("/test/ping", (req, res) => {
   res.json({ message: "pong" });
 });
 
-//main summarize api
-app.post("/api/summarize", async (req, res) => {
+//main summarize api for videos
+app.post("/api/summarize/video", async (req, res) => {
   const { url } = req.body;
 
   // 1. Validate URL
@@ -119,6 +119,54 @@ app.post("/api/summarize", async (req, res) => {
         error:
           "This video platform is coming soon! Only YouTube is supported for now.",
       });
+  }
+});
+
+//main summarize api for texts
+app.post("/api/summarize/text", async (req, res) => {
+  const { text } = req.body;
+  const MAX_TOKENS = 9000; // ~10k chars (adjust as needed)
+
+  // 1. Validate input
+  if (!text || typeof text !== "string" || text.trim().length === 0) {
+    return res
+      .status(400)
+      .json({ error: "Please enter some text to summarize." });
+  }
+
+  try {
+    // 2. If short text, summarize directly
+    if (text.length < MAX_TOKENS) {
+      const prompt = `Summarize the following text in around 100 words:\n---\n${text}`;
+      const summary = await getSummaryFromOpenAI(prompt);
+      return res.json({ summary });
+    }
+
+    // 3. If long text, summarize in chunks then combine
+    const chunks = splitBySentence(text, MAX_TOKENS);
+    const chunkSummaries = [];
+    for (const chunk of chunks) {
+      const chunkPrompt = `Summarize the following text in around 100 words:\n---\n${chunk}`;
+      try {
+        const chunkSummary = await getSummaryFromOpenAI(chunkPrompt);
+        chunkSummaries.push(chunkSummary);
+      } catch (err) {
+        chunkSummaries.push(""); // fallback so we don't break
+      }
+    }
+
+    // 4. Final summary of summaries
+    const finalPrompt = `Combine and summarize the following summaries in around 100 words, preserving the main ideas:\n---\n${chunkSummaries.join(
+      "\n\n"
+    )}`;
+    const finalSummary = await getSummaryFromOpenAI(finalPrompt);
+
+    return res.json({ summary: finalSummary });
+  } catch (err) {
+    console.error("OpenAI/text summary error:", err);
+    return res
+      .status(500)
+      .json({ error: "Failed to generate summary. Please try again!" });
   }
 });
 
