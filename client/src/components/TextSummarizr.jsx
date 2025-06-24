@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Loader from "./Loader";
+import FileUploader from "./FileUploader";
 
-export default function TextSummarizer() {
+export default function TextSummarizer({ summaryRef, triggerScroll }) {
   const [text, setText] = useState("");
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(false);
@@ -12,17 +13,15 @@ export default function TextSummarizer() {
     setLoading(true);
     setSummary("");
     setError("");
-
     try {
       const res = await fetch("http://localhost:5000/api/summarize/text", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
       });
-
       const data = await res.json();
       if (res.ok) setSummary(data.summary);
-      else setError(data.error || "Sorry! Unexpected error occoured!");
+      else setError(data.error || "Sorry! Unexpected error occurred!");
     } catch (err) {
       setError("Failed to connect to Server");
     } finally {
@@ -36,20 +35,44 @@ export default function TextSummarizer() {
     setTimeout(() => setCopied(false), 2500);
   };
 
+  // Auto-scroll into view on summary generate
+  useEffect(() => {
+    if (summary && triggerScroll) triggerScroll(true);
+    // eslint-disable-next-line
+  }, [summary]);
+
   return (
-    <div className="w-full max-w-xl bg-[#111827]/95 rounded-3xl shadow-2xl p-10 mt-10 mb-10 flex flex-col items-center border border-cyan-200/25 ring-2 ring-cyan-400/10 backdrop-blur-xl transition-all hover:scale-[1.01] hover:shadow-[0_4px_60px_0_rgba(0,255,255,0.25)]">
+    <div className="w-full max-w-2xl bg-[#111827]/95 rounded-3xl shadow-2xl p-10 mt-10 mb-10 flex flex-col items-center border border-cyan-200/25 ring-2 ring-cyan-400/10 backdrop-blur-xl transition-all hover:scale-[1.01] hover:shadow-[0_4px_60px_0_rgba(0,255,255,0.25)]">
       <h1 className="text-5xl font-black mb-8 text-center tracking-tight bg-gradient-to-r from-cyan-300 via-teal-300 to-white bg-clip-text text-transparent drop-shadow-lg">
         Sumarrise
       </h1>
+
+      {/* FileUploader for .txt */}
+      <FileUploader
+        accept=".txt,text/plain"
+        label="Click or drag a .txt file here to upload"
+        helperText="Only .txt files are supported for text summarization"
+        onFile={async (file) => {
+          const text = await file.text();
+          setText(text);
+          setSummary(""); // clear summary on new upload
+          setError("");
+        }}
+      />
+
       <textarea
-        maxLength={15000}
         rows={8}
         className="w-full px-5 py-3 rounded-lg border border-neutral-700 bg-neutral-950/70 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 transition mb-6 placeholder:text-neutral-400 resize-none"
         placeholder="Paste or type the text you want to summarize (up to 15,000 characters recommended)"
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => {
+          setText(e.target.value);
+          setSummary("");
+          setError("");
+        }}
         disabled={loading}
       />
+
       <button
         className="w-full py-3 rounded-lg font-bold text-lg bg-gradient-to-r from-cyan-500 to-teal-400 hover:from-teal-400 hover:to-cyan-500 shadow-xl hover:scale-105 transition-all duration-150 disabled:opacity-50"
         onClick={handleSummarize}
@@ -66,7 +89,10 @@ export default function TextSummarizer() {
       ) : (
         <>
           {summary && (
-            <div className="mt-8 w-full bg-neutral-950/70 border border-cyan-400/20 rounded-lg p-6 text-base leading-relaxed shadow-lg relative">
+            <div
+              ref={summaryRef}
+              className="mt-8 w-full bg-neutral-950/70 border border-cyan-400/20 rounded-lg p-6 text-base leading-relaxed shadow-lg relative"
+            >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-semibold text-cyan-300">Summary:</span>
                 <button

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import bgMain from "./assets/bg_main.jpg";
 import Tabs from "./components/Tabs";
 import VideoSummarizer from "./components/VideoSummarizr";
@@ -6,6 +6,19 @@ import TextSummarizer from "./components/textSummarizr";
 
 function App() {
   const [currentTab, setCurrentTab] = useState("video");
+  const [triggerScroll, setTriggerScroll] = useState(false);
+  const summaryRef = useRef(null);
+
+  // Scroll when a summary is generated
+  useEffect(() => {
+    if (triggerScroll && summaryRef.current) {
+      summaryRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      setTriggerScroll(false); // reset trigger
+    }
+  }, [triggerScroll]);
 
   return (
     <div className="flex flex-col min-h-screen text-white relative overflow-hidden">
@@ -38,8 +51,19 @@ function App() {
 
         {/* Active Panel */}
         <div className="w-full flex justify-center">
-          {currentTab === "video" && <VideoSummarizer />}
-          {currentTab === "text" && <TextSummarizer />}
+          {currentTab === "video" && (
+            <VideoSummarizer
+              summaryRef={summaryRef}
+              triggerScroll={setTriggerScroll}
+            />
+          )}
+          {currentTab === "text" && (
+            <TextSummarizer
+              summaryRef={summaryRef}
+              triggerScroll={setTriggerScroll}
+            />
+          )}
+          {/* Add more as needed */}
         </div>
       </main>
 
