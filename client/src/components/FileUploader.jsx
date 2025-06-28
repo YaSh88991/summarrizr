@@ -44,7 +44,7 @@ function FileUploader({ accept, label, helperText, onFile, disabled = false }) {
   return (
     <div
       className={`
-        flex flex-col items-center justify-center border-2 
+        max-w-6xl flex flex-col items-center justify-center border-2 
         ${dragActive ? "border-cyan-400" : "border-cyan-700/60"}
         border-dashed rounded-xl p-6 
         bg-[#16202a]/90 shadow-xl transition-all duration-150 cursor-pointer my-4 w-full max-w-lg

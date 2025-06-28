@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function Tabs({ current, setCurrent }) {
   const tabs = [
     { id: "video", label: "Video" },
@@ -7,20 +5,28 @@ export default function Tabs({ current, setCurrent }) {
     //Add rest later
   ];
   return (
-    <div className="flex gap-2 mb-6">
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          className={`px-5 py-2 rounded-t-lg font-semibold transition ${
+    <div className="w-full flex justify-center mt-2 mb-2">
+      <div className="flex gap-5 bg-[#101926]/80 p-3 rounded-2xl shadow-4xl gap-3">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            className={`px-8 py-3 rounded-xl font-bold text-lg transition-all duration-300 shadow
+          ${
             current === tab.id
-              ? "bg-cyan-500 text-white shadow-lg"
-              : "bg-neutral-900 text-cyan-300 hover:bg-neutral-800"
+              ? "bg-cyan-400 text-black shadow-lg scale-105"
+              : "bg-black/70 text-cyan-200 hover:bg-cyan-700/30 hover:text-white"
           }`}
-          onClick={() => setCurrent(tab.id)}
-        >
+            style={{
+              minWidth: "130px",
+              outline: current === tab.id ? "2px solid #22d3ee" : "none",
+              
+            }}
+            onClick={() => setCurrent(tab.id)}
+          >
             {tab.label}
-        </button>
-      ))}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

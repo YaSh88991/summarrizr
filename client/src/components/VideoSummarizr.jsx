@@ -1,44 +1,28 @@
 import { useState } from "react";
 import Loader from "./Loader";
+import { handleSummarizeAPI } from "../utils/handleSummary";
+import {handleCopyToClipboard} from "../utils/copyToClipboard"
 
-export default function VideoSummarizer() {
+export default function VideoSummarizer({ summaryRef, triggerScroll }) {
   const [videoUrl, setVideoUrl] = useState("");
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const handleSummarize = async () => {
-    setLoading(true);
-    setSummary("");
-    setError("");
-    try {
-      const res = await fetch("http://localhost:5000/api/summarize/video", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: videoUrl }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setSummary(data.summary);
-      } else {
-        setError(data.error || "Failed to summarize video");
-      }
-    } catch (err) {
-      setError("Failed to connect to Server");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleSummarize = () => handleSummarizeAPI({
+      endPoint : "http://localhost:5000/api/summarize/video",
+      payload  : {url : videoUrl},
+      setSummary,
+      setError,
+      setLoading,
+      triggerScroll
+  });
 
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(summary);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  };
+  const handleCopy = () => handleCopyToClipboard(summary, setCopied);
 
   return (
-    <div className="w-full max-w-xl bg-[#111827]/95 rounded-3xl shadow-2xl p-10 mt-10 mb-10 flex flex-col items-center border border-cyan-200/25 ring-2 ring-cyan-400/10 backdrop-blur-xl transition-all hover:scale-[1.01] hover:shadow-[0_4px_60px_0_rgba(0,255,255,0.25)]">
+    <div className="w-full max-w-6xl bg-[#111827]/95 rounded-3xl shadow-2xl p-10 flex flex-col items-center border border-cyan-200/25 ring-2 ring-cyan-400/10 backdrop-blur-xl transition-all hover:scale-[1.01] hover:shadow-[0_4px_60px_0_rgba(0,255,255,0.25)]">
       <h1 className="text-5xl font-black mb-8 text-center tracking-tight bg-gradient-to-r from-cyan-300 via-teal-300 to-white bg-clip-text text-transparent drop-shadow-lg">
         Sumarrise
       </h1>
@@ -47,7 +31,11 @@ export default function VideoSummarizer() {
         className="w-full px-5 py-3 rounded-lg border border-neutral-700 bg-neutral-950/70 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 transition mb-6 placeholder:text-neutral-400"
         placeholder="Paste your video URL here"
         value={videoUrl}
-        onChange={(e) => setVideoUrl(e.target.value)}
+        onChange={(e) => {
+          setVideoUrl(e.target.value);
+          setSummary("");
+          setError("");
+        }}
         disabled={loading}
       />
       <button
@@ -57,7 +45,6 @@ export default function VideoSummarizer() {
       >
         {loading ? "Summarizing..." : "Summarize"}
       </button>
-
       {/* Loader, summary, or error */}
       {loading ? (
         <div className="mt-8 flex justify-center">
@@ -66,7 +53,10 @@ export default function VideoSummarizer() {
       ) : (
         <>
           {summary && (
-            <div className="mt-8 w-full bg-neutral-950/70 border border-cyan-400/20 rounded-lg p-6 text-base leading-relaxed shadow-lg relative">
+            <div
+              ref={summaryRef}
+              className="mt-8 w-full bg-neutral-950/70 border border-cyan-400/20 rounded-lg p-6 text-base leading-relaxed shadow-lg relative"
+            >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-semibold text-cyan-300">Summary:</span>
                 <button
@@ -82,7 +72,8 @@ export default function VideoSummarizer() {
             </div>
           )}
           {error && (
-            <div className="mt-6 w-full flex items-center justify-center gap-2 text-red-400 bg-red-900/40 border border-red-400/40 font-semibold text-center rounded-lg p-4 animate-pulse shadow">
+            <div ref={summaryRef}
+            className="mt-6 w-full flex items-center justify-center gap-2 text-red-400 bg-red-900/40 border border-red-400/40 font-semibold text-center rounded-lg p-4 animate-pulse shadow">
               <svg
                 className="w-5 h-5 text-red-400 inline-block mr-1"
                 fill="none"

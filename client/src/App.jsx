@@ -9,14 +9,13 @@ function App() {
   const [triggerScroll, setTriggerScroll] = useState(false);
   const summaryRef = useRef(null);
 
-  // Scroll when a summary is generated
   useEffect(() => {
     if (triggerScroll && summaryRef.current) {
       summaryRef.current.scrollIntoView({
         behavior: "smooth",
         block: "center",
       });
-      setTriggerScroll(false); // reset trigger
+      setTriggerScroll(false);
     }
   }, [triggerScroll]);
 
@@ -36,18 +35,20 @@ function App() {
       <header className="w-full py-5 px-4 bg-neutral-950/80 border-b border-neutral-900 shadow-lg backdrop-blur-md z-10">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <span className="text-3xl font-extrabold tracking-tight select-none bg-gradient-to-r from-cyan-400 via-teal-300 to-white bg-clip-text text-transparent drop-shadow">
-            Suma<span className="text-white">rrize</span>
+            Suma<span className="text-white">rrizr</span>
           </span>
           <span className="text-neutral-200 font-light text-lg hidden md:block">
-            Summarize any YouTube video in seconds!
+            Summarize anything in seconds!
           </span>
         </div>
       </header>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-2">
+      <main className="flex-1 flex flex-col items-center px-2 py-6 transition-all duration-300">
         {/* Tabs */}
-        <Tabs current={currentTab} setCurrent={setCurrentTab} />
+        <div className="w-full flex justify-center mb-10">
+          <Tabs current={currentTab} setCurrent={setCurrentTab} />
+        </div>
 
         {/* Active Panel */}
         <div className="w-full flex justify-center">
@@ -63,7 +64,6 @@ function App() {
               triggerScroll={setTriggerScroll}
             />
           )}
-          {/* Add more as needed */}
         </div>
       </main>
 

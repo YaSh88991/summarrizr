@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Loader from "./Loader";
 import FileUploader from "./FileUploader";
+import { handleSummarizeAPI } from "../utils/handleSummary";
+import { handleCopyToClipboard } from "../utils/copyToClipboard";
 
 export default function TextSummarizer({ summaryRef, triggerScroll }) {
   const [text, setText] = useState("");
@@ -9,54 +11,45 @@ export default function TextSummarizer({ summaryRef, triggerScroll }) {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const handleSummarize = async () => {
-    setLoading(true);
-    setSummary("");
-    setError("");
-    try {
-      const res = await fetch("http://localhost:5000/api/summarize/text", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-      const data = await res.json();
-      if (res.ok) setSummary(data.summary);
-      else setError(data.error || "Sorry! Unexpected error occurred!");
-    } catch (err) {
-      setError("Failed to connect to Server");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleSummarize = () =>
+    handleSummarizeAPI({
+      endPoint: "http://localhost:5000/api/summarize/text",
+      payload: { text },
+      setSummary,
+      setError,
+      setLoading,
+      triggerScroll,
+    });
 
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(summary);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  };
-
-  // Auto-scroll into view on summary generate
-  useEffect(() => {
-    if (summary && triggerScroll) triggerScroll(true);
-    // eslint-disable-next-line
-  }, [summary]);
+  const handleCopy = () => handleCopyToClipboard(summary, setCopied);
 
   return (
-    <div className="w-full max-w-2xl bg-[#111827]/95 rounded-3xl shadow-2xl p-10 mt-10 mb-10 flex flex-col items-center border border-cyan-200/25 ring-2 ring-cyan-400/10 backdrop-blur-xl transition-all hover:scale-[1.01] hover:shadow-[0_4px_60px_0_rgba(0,255,255,0.25)]">
+    <div className="w-full max-w-6xl bg-[#111827]/95 rounded-3xl shadow-2xl p-10 flex flex-col items-center border border-cyan-200/25 ring-2 ring-cyan-400/10 backdrop-blur-xl transition-all hover:scale-[1.01] hover:shadow-[0_4px_60px_0_rgba(0,255,255,0.25)]">
       <h1 className="text-5xl font-black mb-8 text-center tracking-tight bg-gradient-to-r from-cyan-300 via-teal-300 to-white bg-clip-text text-transparent drop-shadow-lg">
         Sumarrise
       </h1>
-
       {/* FileUploader for .txt */}
       <FileUploader
         accept=".txt,text/plain"
         label="Click or drag a .txt file here to upload"
         helperText="Only .txt files are supported for text summarization"
         onFile={async (file) => {
-          const text = await file.text();
-          setText(text);
-          setSummary(""); // clear summary on new upload
-          setError("");
+          if (
+            file.type != "text/plain" &&
+            !file.name.toLowerCase().endsWith(".txt")
+          ) {
+            setError("Please provide a text file!");
+            triggerScroll(true)
+            setText(""), 
+            setSummary("");
+            return
+          } 
+          else {
+            const text = await file.text();
+            setText(text);
+            setSummary(""); // clear summary on new upload
+            setError("");
+          }
         }}
       />
 
@@ -108,7 +101,9 @@ export default function TextSummarizer({ summaryRef, triggerScroll }) {
             </div>
           )}
           {error && (
-            <div className="mt-6 w-full flex items-center justify-center gap-2 text-red-400 bg-red-900/40 border border-red-400/40 font-semibold text-center rounded-lg p-4 animate-pulse shadow">
+            <div 
+            ref={summaryRef}
+            className="mt-6 w-full flex items-center justify-center gap-2 text-red-400 bg-red-900/40 border border-red-400/40 font-semibold text-center rounded-lg p-4 animate-pulse shadow">
               <svg
                 className="w-5 h-5 text-red-400 inline-block mr-1"
                 fill="none"
