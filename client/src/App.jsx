@@ -3,6 +3,9 @@ import bgMain from "./assets/bg_main.jpg";
 import Tabs from "./components/Tabs";
 import VideoSummarizer from "./components/VideoSummarizr";
 import TextSummarizer from "./components/textSummarizr";
+import PdfSummarizr from "./components/PdfSummarizr";
+import DocsSummarizr from "./components/DocsSummarizr";
+import PptSummarizr from "./components/PptSummarizr";
 
 function App() {
   const [currentTab, setCurrentTab] = useState("video");
@@ -60,6 +63,24 @@ function App() {
           )}
           {currentTab === "text" && (
             <TextSummarizer
+              summaryRef={summaryRef}
+              triggerScroll={setTriggerScroll}
+            />
+          )}
+          {currentTab === "pdf" && (
+            <PdfSummarizr
+              summaryRef={summaryRef}
+              triggerScroll={setTriggerScroll}
+            />
+          )}
+          {currentTab === "docs" && (
+            <DocsSummarizr
+              summaryRef={summaryRef}
+              triggerScroll={setTriggerScroll}
+            />
+          )}
+          {currentTab === "pptx" && (
+            <PptSummarizr
               summaryRef={summaryRef}
               triggerScroll={setTriggerScroll}
             />

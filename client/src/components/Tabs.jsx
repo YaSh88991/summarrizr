@@ -1,12 +1,15 @@
 export default function Tabs({ current, setCurrent }) {
   const tabs = [
+    { id: "pdf", label: "PDF"},
     { id: "video", label: "Video" },
     { id: "text", label: "Text" },
+    { id: "docs", label: "Docs"},
+    { id: "pptx", label: "PPTs"}
     //Add rest later
   ];
   return (
-    <div className="w-full flex justify-center mt-2 mb-2">
-      <div className="flex gap-5 bg-[#101926]/80 p-3 rounded-2xl shadow-4xl gap-3">
+    <div className="w-full flex justify-center mt-4 mb-6">
+      <div className="flex gap-5 bg-[#101926]/80 p-3 rounded-2xl shadow-xl gap-3">
         {tabs.map((tab) => (
           <button
             key={tab.id}

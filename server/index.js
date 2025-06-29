@@ -170,5 +170,20 @@ app.post("/api/summarize/text", async (req, res) => {
   }
 });
 
+//main summarize api for pdf
+app.post("/api/summarize/pdf", async (req, res) => {
+  res.json({ summary: "This is a dummy summary for your PDF file. (Coming soon!)" });
+});
+
+//main summarize api for docs
+app.post("/api/summarize/docs", async (req, res) => {
+  res.json({ summary: "This is a dummy summary for your docs file. (Coming soon!)" });
+});
+
+//main summarize api for pptx
+app.post("/api/summarize/pptx", async (req, res) => {
+  res.json({ summary: "This is a dummy summary for your ppt file. (Coming soon!)" });
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
