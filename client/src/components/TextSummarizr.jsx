@@ -4,12 +4,61 @@ import FileUploader from "./FileUploader";
 import { handleSummarizeAPI } from "../utils/handleSummary";
 import { handleCopyToClipboard } from "../utils/copyToClipboard";
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
 export default function TextSummarizer({ summaryRef, triggerScroll }) {
   const [text, setText] = useState("");
+  const [file, setFile] = useState(null);
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+
+  // File selection/validation/clear logic
+  const handleFileUpload = async (fileObj) => {
+    setSummary("");
+    setError("");
+    if (!fileObj) {
+      // File was removed!
+      setFile(null);
+      setText(""); // Clear textarea!
+      return;
+    }
+
+    // Validate type
+    if (
+      (!fileObj.type || fileObj.type !== "text/plain") &&
+      !fileObj.name.toLowerCase().endsWith(".txt")
+    ) {
+      setError("Please provide a text (.txt) file!");
+      triggerScroll(true);
+      setText("");
+      setFile(null);
+      return;
+    }
+    // Validate size
+    if (fileObj.size > MAX_FILE_SIZE) {
+      setError("File is too large (max 5MB).");
+      triggerScroll(true);
+      setText("");
+      setFile(null);
+      return;
+    }
+    // Read text from file
+    const txt = await fileObj.text();
+    setText(txt);
+    setFile(fileObj);
+    setSummary("");
+    setError("");
+  };
+
+  // User edits text: clear file (if any)
+  const handleTextChange = (e) => {
+    setText(e.target.value);
+    setSummary("");
+    setError("");
+    if (file) setFile(null); // Editing means no file upload
+  };
 
   const handleSummarize = () =>
     handleSummarizeAPI({
@@ -32,40 +81,18 @@ export default function TextSummarizer({ summaryRef, triggerScroll }) {
       <FileUploader
         accept=".txt,text/plain"
         label="Click or drag a .txt file here to upload"
-        helperText="Only .txt files are supported for text summarization"
-        onFile={async (file) => {
-          if (
-            file.type != "text/plain" &&
-            !file.name.toLowerCase().endsWith(".txt")
-          ) {
-            setError("Please provide a text file!");
-            triggerScroll(true)
-            setText(""), 
-            setSummary("");
-            return
-          } 
-          else {
-            const text = await file.text();
-            setText(text);
-            setSummary(""); // clear summary on new upload
-            setError("");
-          }
-        }}
+        helperText="Only .txt files are supported for text summarization (max 5MB)"
+        onFile={handleFileUpload}
+        maxSizeMB={5}
       />
-
       <textarea
         rows={8}
         className="w-full px-5 py-3 rounded-lg border border-neutral-700 bg-neutral-950/70 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 transition mb-6 placeholder:text-neutral-400 resize-none"
         placeholder="Paste or type the text you want to summarize (up to 15,000 characters recommended)"
         value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          setSummary("");
-          setError("");
-        }}
+        onChange={handleTextChange}
         disabled={loading}
       />
-
       <button
         className="w-full py-3 rounded-lg font-bold text-lg bg-gradient-to-r from-cyan-500 to-teal-400 hover:from-teal-400 hover:to-cyan-500 shadow-xl hover:scale-105 transition-all duration-150 disabled:opacity-50"
         onClick={handleSummarize}
@@ -101,9 +128,10 @@ export default function TextSummarizer({ summaryRef, triggerScroll }) {
             </div>
           )}
           {error && (
-            <div 
-            ref={summaryRef}
-            className="mt-6 w-full flex items-center justify-center gap-2 text-red-400 bg-red-900/40 border border-red-400/40 font-semibold text-center rounded-lg p-4 animate-pulse shadow">
+            <div
+              ref={summaryRef}
+              className="mt-6 w-full flex items-center justify-center gap-2 text-red-400 bg-red-900/40 border border-red-400/40 font-semibold text-center rounded-lg p-4 animate-pulse shadow"
+            >
               <svg
                 className="w-5 h-5 text-red-400 inline-block mr-1"
                 fill="none"

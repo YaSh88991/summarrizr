@@ -2,12 +2,29 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
-const {
-  YoutubeLoader,
-} = require("@langchain/community/document_loaders/web/youtube");
+const {YoutubeLoader,} = require("@langchain/community/document_loaders/web/youtube");
 const { splitBySentence } = require("./utils/textUtils");
 const { getSummaryFromOpenAI } = require("./utils/openai");
 const { detectPlatform } = require("./utils/detectPlatform");
+const officeParser = require("officeparser");
+const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
+
+//Work around for officeparser as extension was not getting preserved, so it was giving err in parsing as unrecognized file type.
+// Custom storage config
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    // Get original extension
+    const ext = path.extname(file.originalname);
+    cb(null, `${file.fieldname}-${Date.now()}${ext}`);
+  }
+});
+
+const upload = multer({ storage });
 
 const app = express();
 app.use(cors());
@@ -171,8 +188,69 @@ app.post("/api/summarize/text", async (req, res) => {
 });
 
 //main summarize api for pdf
-app.post("/api/summarize/pdf", async (req, res) => {
-  res.json({ summary: "This is a dummy summary for your PDF file. (Coming soon!)" });
+app.post("/api/summarize/pdf", upload.single("file"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "No file uploaded." });
+  }
+
+  // Helper for cleanup
+  const cleanupFile = (filepath) => {
+    fs.unlink(filepath, (err) => {
+      if (err) console.error("Failed to delete temp file:", err);
+    });
+  };
+
+  try {
+    officeParser.parseOffice(req.file.path, async function(data, err) {
+      // Clean up as soon as possible!
+      cleanupFile(req.file.path);
+
+      if (err) {
+        console.error("Officeparser error:", err);
+        return res.status(500).json({ error: "Failed to read PDF file." });
+      }
+      if (!data || typeof data !== "string" || data.trim().length === 0) {
+        return res.status(400).json({ error: "Could not extract text from PDF." });
+      }
+
+      const MAX_TOKENS = 9000;
+      try {
+        // If short, summarize directly
+        if (data.length < MAX_TOKENS) {
+          const prompt = `Summarize the following PDF in around 100 words:\n---\n${data}`;
+          const summary = await getSummaryFromOpenAI(prompt);
+          return res.json({ summary });
+        }
+
+        // Chunk and summarize if large
+        const chunks = splitBySentence(data, MAX_TOKENS);
+        const chunkSummaries = [];
+        for (const chunk of chunks) {
+          const chunkPrompt = `Summarize the following PDF chunk in around 100 words:\n---\n${chunk}`;
+          try {
+            const chunkSummary = await getSummaryFromOpenAI(chunkPrompt);
+            chunkSummaries.push(chunkSummary);
+          } catch {
+            chunkSummaries.push("");
+          }
+        }
+        // Final summary
+        const finalPrompt = `Combine and summarize these summaries in around 100 words:\n---\n${chunkSummaries.join(
+          "\n\n"
+        )}`;
+        const finalSummary = await getSummaryFromOpenAI(finalPrompt);
+
+        return res.json({ summary: finalSummary });
+      } catch (err) {
+        console.error("Summary error:", err);
+        return res.status(500).json({ error: "Failed to summarize PDF content." });
+      }
+    });
+  } catch (err) {
+    cleanupFile(req.file.path);
+    console.error("Unexpected error:", err);
+    return res.status(500).json({ error: "Internal server error." });
+  }
 });
 
 //main summarize api for docs
