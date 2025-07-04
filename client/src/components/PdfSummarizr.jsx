@@ -3,6 +3,8 @@ import { handleCopyToClipboard } from "../utils/copyToClipboard";
 import FileUploader from "./FileUploader";
 import Loader from "./Loader";
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
 export default function PdfSummarizr({ summaryRef, triggerScroll }) {
   const [file, setFile] = useState(null);
   const [summary, setSummary] = useState("");
@@ -10,17 +12,39 @@ export default function PdfSummarizr({ summaryRef, triggerScroll }) {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // FileUploader handles file validation, only update file state here
+  // Handles file select/remove + validation
   const handleFileUpload = (fileObj) => {
     setSummary("");
     setError("");
-    setFile(fileObj);
-    // When fileObj is null (file removed), clear summary and error
+    setFile(null);
+
     if (!fileObj) {
+      // User removed the file
       setSummary("");
       setError("");
+      setFile(null);
+      return;
     }
+    // Validate type
+    if (
+      (!fileObj.type || fileObj.type !== "application/pdf") &&
+      !fileObj.name.toLowerCase().endsWith(".pdf")
+    ) {
+      setError("Please provide a PDF file!");
+      triggerScroll(true);
+      return;
+    }
+    // Validate size
+    if (fileObj.size > MAX_FILE_SIZE) {
+      setError("File is too large (max 5MB).");
+      triggerScroll(true);
+      return;
+    }
+    setFile(fileObj);
   };
+
+  // Submit file to backend
+  //not using handlesumaaryAPI util function because we need officeparser lib for pdf/docs/ppt file types so we will have to do much customization in that function so instead using this new handler
 
   const handleSummarize = async () => {
     if (!file) return;
@@ -62,15 +86,14 @@ export default function PdfSummarizr({ summaryRef, triggerScroll }) {
       <h1 className="text-5xl font-black mb-8 text-center tracking-tight bg-gradient-to-r from-cyan-300 via-teal-300 to-white bg-clip-text text-transparent drop-shadow-lg">
         Sumarrise
       </h1>
-
       <FileUploader
         accept=".pdf,application/pdf"
         label="Click or drag a .pdf file here to upload"
         helperText="Only .pdf files are supported for PDF summarization (max 5MB)"
         onFile={handleFileUpload}
+        file={file}
         maxSizeMB={5}
       />
-
       <button
         className="w-full py-3 rounded-lg font-bold text-lg bg-gradient-to-r from-cyan-500 to-teal-400 hover:from-teal-400 hover:to-cyan-500 shadow-xl hover:scale-105 transition-all duration-150 disabled:opacity-50"
         onClick={handleSummarize}

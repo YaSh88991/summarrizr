@@ -83,6 +83,7 @@ export default function TextSummarizer({ summaryRef, triggerScroll }) {
         label="Click or drag a .txt file here to upload"
         helperText="Only .txt files are supported for text summarization (max 5MB)"
         onFile={handleFileUpload}
+        file={file}
         maxSizeMB={5}
       />
       <textarea

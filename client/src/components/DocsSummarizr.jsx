@@ -1,25 +1,84 @@
 import React, { useState } from "react";
-import { handleSummarizeAPI } from "../utils/handleSummary";
 import { handleCopyToClipboard } from "../utils/copyToClipboard";
-import Loader from "./Loader";
 import FileUploader from "./FileUploader";
+import Loader from "./Loader";
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export default function DocsSummarizr({ summaryRef, triggerScroll }) {
-  const [text, setText] = useState("");
+  const [file, setFile] = useState(null);
   const [summary, setSummary] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const handleSummarize = () =>
-    handleSummarizeAPI({
-      endPoint: "http://localhost:5000/api/summarize/docs",
-      payload: { text },
-      setSummary,
-      setError,
-      setLoading,
-      triggerScroll,
-    });
+  // Handles file select/remove + validation
+  const handleFileUpload = (fileObj) => {
+    setSummary("");
+    setError("");
+    setFile(null);
+
+    if (!fileObj) {
+      setSummary("");
+      setError("");
+      setFile(null);
+      return;
+    }
+    // Validate type
+    if (
+      (!fileObj.type ||
+        fileObj.type !==
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document") &&
+      !fileObj.name.toLowerCase().endsWith(".docx")
+    ) {
+      setError("Please provide a DOCX file!");
+      triggerScroll(true);
+      return;
+    }
+    // Validate size
+    if (fileObj.size > MAX_FILE_SIZE) {
+      setError("File is too large (max 5MB).");
+      triggerScroll(true);
+      return;
+    }
+    setFile(fileObj);
+  };
+
+  // Submit file to backend
+  //not using handlesumaaryAPI util function because we need officeparser lib for pdf/docs/ppt file types so we will have to do much customization in that function so instead using this new handler
+
+  const handleSummarize = async () => {
+    if (!file) return;
+
+    setLoading(true);
+    setSummary("");
+    setError("");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("http://localhost:5000/api/summarize/docs", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setSummary(data.summary);
+        setError("");
+        triggerScroll(true);
+      } else {
+        setError(data.error || "Sorry! Unexpected error occurred!");
+        triggerScroll(true);
+      }
+    } catch (err) {
+      setError("Failed to connect to Server");
+      triggerScroll(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCopy = () => handleCopyToClipboard(summary, setCopied);
 
@@ -28,33 +87,18 @@ export default function DocsSummarizr({ summaryRef, triggerScroll }) {
       <h1 className="text-5xl font-black mb-8 text-center tracking-tight bg-gradient-to-r from-cyan-300 via-teal-300 to-white bg-clip-text text-transparent drop-shadow-lg">
         Sumarrise
       </h1>
-
-      {/* FileUploader for .docx */}
       <FileUploader
         accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         label="Click or drag a .docx file here to upload"
-        helperText="Only .docx (Word) files are supported for docs summarization"
-        onFile={async (file) => {
-          if (
-            (file.type && file.type !== "application/vnd.openxmlformats-officedocument.wordprocessingml.document") ||
-            !file.name.toLowerCase().endsWith(".docx")
-          ) {
-            setError("Please provide a valid .docx file!");
-            triggerScroll(true);
-            setText(""); setSummary("");
-            return;
-          }
-          const text = await file.text();
-          setText(text);
-          setSummary("");
-          setError("");
-        }}
+        helperText="Only .docx files are supported for DOCX summarization (max 5MB)"
+        onFile={handleFileUpload}
+        file={file}
+        maxSizeMB={5}
       />
-
       <button
         className="w-full py-3 rounded-lg font-bold text-lg bg-gradient-to-r from-cyan-500 to-teal-400 hover:from-teal-400 hover:to-cyan-500 shadow-xl hover:scale-105 transition-all duration-150 disabled:opacity-50"
         onClick={handleSummarize}
-        disabled={loading || !text}
+        disabled={loading || !file}
       >
         {loading ? "Summarizing..." : "Summarize"}
       </button>

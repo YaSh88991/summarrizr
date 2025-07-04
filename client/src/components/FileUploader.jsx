@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 
 /**
   FileUploader component (reusable for any file type)
@@ -8,7 +8,8 @@ import React, { useRef, useState } from "react";
   helperText: string, optional, shown below label
   onFile: function (file: File|null) => void  // call with file or null if removed
   disabled: bool (optional)
-  maxSizeMB: number (optional, for max file size validation)
+  maxSizeMB: number (optional, for max file size validation, error shown in parent)
+  file: File|null  // controlled mode
  */
 
 function FileUploader({
@@ -18,52 +19,21 @@ function FileUploader({
   onFile,
   disabled = false,
   maxSizeMB = 5,
+  file, // controlled file
 }) {
   const fileInputRef = useRef();
   const [dragActive, setDragActive] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-
-  // -------- File type check utility ------------
-  const matchesAcceptedType = (file) => {
-    if (!accept) return true;
-    const acceptList = accept.split(",").map((s) => s.trim());
-    return acceptList.some((type) => {
-      if (type.startsWith(".")) {
-        return file.name.toLowerCase().endsWith(type.toLowerCase());
-      }
-      return file.type === type;
-    });
-  };
-  // ---------------------------------------------
-
-  // Handles file select (input or drop)
-  const processFile = (file) => {
-    if (!file) return;
-    // ------ FILE TYPE VALIDATION -----
-    if (!matchesAcceptedType(file)) {
-      alert("Invalid file type. Please upload the correct file type.");
-      return;
-    }
-    // ------ FILE SIZE VALIDATION -----
-    if (maxSizeMB && file.size > maxSizeMB * 1024 * 1024) {
-      alert(`File is too large (max ${maxSizeMB} MB)`);
-      return;
-    }
-    setSelectedFile(file);
-    if (onFile) onFile(file);
-  };
 
   // Remove handler
   const handleRemove = (e) => {
     e.stopPropagation();
-    setSelectedFile(null);
     if (onFile) onFile(null); // Let parent reset its state
   };
 
   // File input change
   const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) processFile(file);
+    const fileObj = e.target.files?.[0];
+    if (onFile) onFile(fileObj || null);
   };
 
   // Drag and drop logic
@@ -82,8 +52,8 @@ function FileUploader({
     e.preventDefault();
     setDragActive(false);
     if (disabled) return;
-    const file = e.dataTransfer.files?.[0];
-    if (file) processFile(file);
+    const fileObj = e.dataTransfer.files?.[0];
+    if (onFile) onFile(fileObj || null);
   };
 
   return (
@@ -120,7 +90,7 @@ function FileUploader({
       />
 
       {/* Show prompt only if no file */}
-      {!selectedFile ? (
+      {!file ? (
         <>
           <span className="text-cyan-200 font-medium text-lg select-none">
             {label || "Click or drag a file here to upload"}
@@ -133,10 +103,10 @@ function FileUploader({
         // Show file info and Remove button
         <div className="w-full flex items-center justify-between gap-4 bg-neutral-900/80 px-5 py-3 rounded-lg border border-cyan-700/30 max-w-md shadow">
           <span className="text-cyan-200 font-semibold truncate">
-            {selectedFile.name}
+            {file.name}
           </span>
           <span className="text-xs text-neutral-400">
-            ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+            ({(file.size / 1024 / 1024).toFixed(2)} MB)
           </span>
           <button
             className="ml-auto px-3 py-1 text-xs rounded bg-red-500/80 hover:bg-red-500 text-white font-semibold transition"
