@@ -1,32 +1,42 @@
 export default function Tabs({ current, setCurrent }) {
   const tabs = [
-    { id: "pdf", label: "PDF"},
+    { id: "pdf", label: "PDF" },
     { id: "video", label: "Video" },
     { id: "text", label: "Text" },
-    { id: "docs", label: "Docs"},
-    { id: "pptx", label: "PPTs"}
-    //Add rest later
+    { id: "docs", label: "Docs" },
+    { id: "pptx", label: "PPTs" },
   ];
+
   return (
-    <div className="w-full flex justify-center mt-4 mb-6">
-      <div className="flex gap-5 bg-[#101926]/80 p-3 rounded-2xl shadow-xl gap-3">
+    <div className="w-full flex justify-center">
+      <div className="flex gap-5 md:gap-6">
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            className={`px-8 py-3 rounded-xl font-bold text-lg transition-all duration-300 shadow
-          ${
-            current === tab.id
-              ? "bg-cyan-400 text-black shadow-lg scale-105"
-              : "bg-black/70 text-cyan-200 hover:bg-cyan-700/30 hover:text-white"
-          }`}
+            className={`
+              px-8 py-2 md:py-3 font-bold text-base md:text-lg
+              rounded-full focus:outline-none
+              transition-all duration-150
+              relative
+              ${
+                current === tab.id
+                  ? "bg-gradient-to-r from-cyan-400 via-teal-400 to-blue-400 text-black ring-2 ring-cyan-300"
+                  : "bg-black/100 text-cyan-200 hover:bg-cyan-700/30 hover:text-white"
+              }
+              ${current === tab.id ? "scale-110 shadow-xl" : ""}
+            `}
             style={{
-              minWidth: "130px",
-              outline: current === tab.id ? "2px solid #22d3ee" : "none",
-              
+              minWidth: "120px",
+              // Gradient border for active tab using box-shadow if you want even more pop:
+              boxShadow:
+                current === tab.id
+                  ? "0 0 0 3px #22d3ee, 0 2px 10px 0 rgba(34,211,238,0.30)"
+                  : undefined,
             }}
             onClick={() => setCurrent(tab.id)}
           >
             {tab.label}
+            {/* Add a subtle gradient border below using pseudo-element in CSS if needed */}
           </button>
         ))}
       </div>

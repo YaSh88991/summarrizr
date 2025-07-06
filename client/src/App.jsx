@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from "react";
-import bgMain from "./assets/bg_main.jpg";
+import { Menu, X } from "lucide-react";
+import bg_summ from "./assets/bg_summ.mp4";
 import Tabs from "./components/Tabs";
 import VideoSummarizer from "./components/VideoSummarizr";
 import TextSummarizer from "./components/textSummarizr";
@@ -7,10 +8,24 @@ import PdfSummarizr from "./components/PdfSummarizr";
 import DocsSummarizr from "./components/DocsSummarizr";
 import PptSummarizr from "./components/PptSummarizr";
 
-function App() {
+const EXTRA_MENU = [
+  { label: "Settings", onClick: () => {} },
+  { label: "About", onClick: () => {} },
+];
+
+export default function App() {
   const [currentTab, setCurrentTab] = useState("video");
   const [triggerScroll, setTriggerScroll] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const summaryRef = useRef(null);
+
+  // Responsive: show tabs inside burger under md (tailwind: <768px)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     if (triggerScroll && summaryRef.current) {
@@ -22,39 +37,128 @@ function App() {
     }
   }, [triggerScroll]);
 
+  // Tabs array for both places
+  const tabs = [
+    { id: "pdf", label: "PDF" },
+    { id: "video", label: "Video" },
+    { id: "text", label: "Text" },
+    { id: "docs", label: "Docs" },
+    { id: "pptx", label: "PPTs" },
+  ];
+
   return (
     <div className="flex flex-col min-h-screen text-white relative overflow-hidden">
-      {/* Background image */}
-      <div
-        className="absolute inset-0 -z-20 w-full h-full"
-        style={{
-          background: `url(${bgMain}) center/cover no-repeat`,
-          height: "100%",
-        }}
+      {/* --- BG Video & Gradient --- */}
+      <video
+        className="absolute inset-0 -z-20 w-full h-full object-cover"
+        src={bg_summ}
+        autoPlay
+        loop
+        muted
+        playsInline
       />
       <div className="absolute inset-0 -z-10 w-full h-full bg-gradient-to-b from-black/80 via-teal-900/40 to-black/90" />
 
-      {/* Header */}
-      <header className="w-full py-5 px-4 bg-neutral-950/80 border-b border-neutral-900 shadow-lg backdrop-blur-md z-10">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+      {/* --- Header --- */}
+      <header className="w-full px-6 pt-7 pb-2 z-20">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-8">
+          {/* --- Logo --- */}
           <span className="text-3xl font-extrabold tracking-tight select-none bg-gradient-to-r from-cyan-400 via-teal-300 to-white bg-clip-text text-transparent drop-shadow">
             Suma<span className="text-white">rrizr</span>
           </span>
-          <span className="text-neutral-200 font-light text-lg hidden md:block">
-            Summarize anything in seconds!
-          </span>
+          {/* --- Tabs (center, only PC) --- */}
+          <div className="hidden md:flex flex-1 justify-center">
+            <Tabs current={currentTab} setCurrent={setCurrentTab} tabs={tabs} />
+          </div>
+          {/* --- Hamburger always visible --- */}
+          <button
+            className="w-12 h-12 flex items-center justify-center rounded-full bg-black/70 hover:bg-black/90 border-2 border-cyan-500 transition"
+            aria-label="Menu"
+            onClick={() => setDrawerOpen(true)}
+          >
+            <Menu size={32} strokeWidth={2.5} />
+          </button>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="flex-1 flex flex-col items-center px-2 py-6 transition-all duration-300">
-        {/* Tabs */}
-        <div className="w-full flex justify-center mb-10">
-          <Tabs current={currentTab} setCurrent={setCurrentTab} />
+      {/* --- Drawer Overlay & Drawer Panel --- */}
+      {/* Overlay */}
+      <div
+        className={`fixed inset-0 z-40 transition-all duration-300 ${
+          drawerOpen
+            ? "bg-black/50 pointer-events-auto"
+            : "pointer-events-none bg-transparent"
+        }`}
+        style={{ backdropFilter: drawerOpen ? "blur(2px)" : "none" }}
+        onClick={() => setDrawerOpen(false)}
+        aria-hidden={!drawerOpen}
+        inert={!drawerOpen}
+      />
+      {/* Drawer */}
+      <aside
+        className={`
+          fixed top-0 right-0 z-50 h-full w-[88vw] max-w-xs bg-neutral-900/95 shadow-2xl
+          transition-transform duration-300 rounded-s-3xl
+          flex flex-col pt-6 px-4
+          ${drawerOpen ? "translate-x-0" : "translate-x-full"}
+        `}
+        tabIndex={drawerOpen ? 0 : -1}
+        style={{ outline: "none" }}
+      >
+        {/* Close Button */}
+        <button
+          className="self-end mb-4 rounded-full bg-black/60 border border-cyan-500 p-2"
+          onClick={() => setDrawerOpen(false)}
+          aria-label="Close"
+        >
+          <X size={28} />
+        </button>
+        {/* --- Tabs (mobile only) --- */}
+        {isMobile && (
+          <div className="flex flex-col gap-4 mb-6">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setCurrentTab(tab.id);
+                  setDrawerOpen(false);
+                }}
+                className={`
+                  px-8 py-3 rounded-full font-bold text-lg transition-all duration-300
+                  shadow ring-2
+                  ${
+                    currentTab === tab.id
+                      ? "bg-gradient-to-r from-cyan-400 to-teal-400 text-black ring-cyan-400"
+                      : "bg-black/90 text-cyan-200 hover:bg-cyan-700/30 hover:text-white ring-cyan-900"
+                  }
+                `}
+                style={{
+                  minWidth: "130px",
+                  outline: currentTab === tab.id ? "2px solid #22d3ee" : "none",
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* --- Extra Menu Items --- */}
+        <div className="flex flex-col gap-2 mt-auto mb-4">
+          {EXTRA_MENU.map((item) => (
+            <button
+              key={item.label}
+              className="w-full px-5 py-3 rounded-xl font-bold text-lg transition-all duration-150 bg-neutral-800/80 text-cyan-200 hover:bg-cyan-700/30 hover:text-white"
+              onClick={item.onClick}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
+      </aside>
 
-        {/* Active Panel */}
-        <div className="w-full flex justify-center">
+      {/* --- Main Content & Footer --- */}
+      <main className="flex-1 flex flex-col items-center px-2 pt-20 pb-6 transition-all duration-300">
+        <div className="w-full flex justify-center mt-2">
           {currentTab === "video" && (
             <VideoSummarizer
               summaryRef={summaryRef}
@@ -87,8 +191,6 @@ function App() {
           )}
         </div>
       </main>
-
-      {/* Footer */}
       <footer className="w-full py-4 text-center text-sm text-neutral-400 bg-neutral-950/60 border-t border-neutral-800/60">
         &copy; {new Date().getFullYear()} Sumarrise &mdash; Built for devs, by
         devs.
@@ -96,5 +198,3 @@ function App() {
     </div>
   );
 }
-
-export default App;

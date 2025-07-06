@@ -3,7 +3,7 @@ import { handleCopyToClipboard } from "../utils/copyToClipboard";
 import Loader from "./Loader";
 import FileUploader from "./FileUploader";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 5MB
 
 export default function PptSummarizr({ summaryRef, triggerScroll }) {
   const [file, setFile] = useState(null);
