@@ -319,6 +319,7 @@ app.post("/api/summarize/docs", upload.single("file"), async (req, res) => {
   }
 });
 
+
 //main summarize api for pptx
 app.post("/api/summarize/pptx", upload.single("file"), async (req, res) => {
   if (!req.file) {
@@ -376,6 +377,72 @@ app.post("/api/summarize/pptx", upload.single("file"), async (req, res) => {
       } catch (err) {
         console.error("Summary error:", err);
         return res.status(500).json({ error: "Failed to summarize ppt content." });
+      }
+    });
+  } catch (err) {
+    cleanupFile(req.file.path);
+    console.error("Unexpected error:", err);
+    return res.status(500).json({ error: "Internal server error." });
+  }
+});
+
+//main summarize api for excel
+app.post("/api/summarize/excel", upload.single("file"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "No file uploaded." });
+  }
+
+  // Helper for cleanup
+  const cleanupFile = (filepath) => {
+    fs.unlink(filepath, (err) => {
+      if (err) console.error("Failed to delete temp file:", err);
+    });
+  };
+
+  try {
+    officeParser.parseOffice(req.file.path, async function(data, err) {
+      // Clean up as soon as possible!
+      cleanupFile(req.file.path);
+
+      if (err) {
+        console.error("Officeparser error:", err);
+        return res.status(500).json({ error: "Failed to read Excel file." });
+      }
+      if (!data || typeof data !== "string" || data.trim().length === 0) {
+        return res.status(400).json({ error: "Could not extract text from Excel!" });
+      }
+
+      const MAX_TOKENS = 9000;
+      try {
+        // If short, summarize directly
+        if (data.length < MAX_TOKENS) {
+          const prompt = `Summarize the following Excel file in around 100 words:\n---\n${data}`;
+          const summary = await getSummaryFromOpenAI(prompt);
+          return res.json({ summary });
+        }
+
+        // Chunk and summarize if large
+        const chunks = splitBySentence(data, MAX_TOKENS);
+        const chunkSummaries = [];
+        for (const chunk of chunks) {
+          const chunkPrompt = `Summarize the following Excel chunk in around 100 words:\n---\n${chunk}`;
+          try {
+            const chunkSummary = await getSummaryFromOpenAI(chunkPrompt);
+            chunkSummaries.push(chunkSummary);
+          } catch {
+            chunkSummaries.push("");
+          }
+        }
+        // Final summary
+        const finalPrompt = `Combine and summarize these summaries in around 100 words:\n---\n${chunkSummaries.join(
+          "\n\n"
+        )}`;
+        const finalSummary = await getSummaryFromOpenAI(finalPrompt);
+
+        return res.json({ summary: finalSummary });
+      } catch (err) {
+        console.error("Summary error:", err);
+        return res.status(500).json({ error: "Failed to summarize Excel content." });
       }
     });
   } catch (err) {

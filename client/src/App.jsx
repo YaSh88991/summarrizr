@@ -7,16 +7,19 @@ import TextSummarizer from "./components/textSummarizr";
 import PdfSummarizr from "./components/PdfSummarizr";
 import DocsSummarizr from "./components/DocsSummarizr";
 import PptSummarizr from "./components/PptSummarizr";
-
-const EXTRA_MENU = [
-  { label: "Settings", onClick: () => {} },
-  { label: "About", onClick: () => {} },
-];
+import ExcelSummarizr from "./components/ExcelSummarizr";
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState("video");
   const [triggerScroll, setTriggerScroll] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+
+  const EXTRA_MENU = [
+    { label: "Settings", onClick: () => {} },
+    { label: "About", onClick: () => setAboutOpen(true) },
+  ];
+
   const summaryRef = useRef(null);
 
   // Responsive: show tabs inside burger under md (tailwind: <768px)
@@ -44,6 +47,7 @@ export default function App() {
     { id: "text", label: "Text" },
     { id: "docs", label: "Docs" },
     { id: "pptx", label: "PPTs" },
+    { id: "excel", label: "Excel" },
   ];
 
   return (
@@ -66,10 +70,12 @@ export default function App() {
           <span className="text-3xl font-extrabold tracking-tight select-none bg-gradient-to-r from-cyan-400 via-teal-300 to-white bg-clip-text text-transparent drop-shadow">
             Suma<span className="text-white">rrizr</span>
           </span>
+
           {/* --- Tabs (center, only PC) --- */}
           <div className="hidden md:flex flex-1 justify-center">
             <Tabs current={currentTab} setCurrent={setCurrentTab} tabs={tabs} />
           </div>
+
           {/* --- Hamburger always visible --- */}
           <button
             className="w-12 h-12 flex items-center justify-center rounded-full bg-black/70 hover:bg-black/90 border-2 border-cyan-500 transition"
@@ -189,12 +195,49 @@ export default function App() {
               triggerScroll={setTriggerScroll}
             />
           )}
+          {currentTab === "excel" && (
+            <ExcelSummarizr
+              summaryRef={summaryRef}
+              triggerScroll={setTriggerScroll}
+            />
+          )}
         </div>
       </main>
       <footer className="w-full py-4 text-center text-sm text-neutral-400 bg-neutral-950/60 border-t border-neutral-800/60">
         &copy; {new Date().getFullYear()} Sumarrise &mdash; Built for devs, by
         devs.
       </footer>
+      {aboutOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#161d26] rounded-2xl p-8 max-w-lg w-full shadow-xl border border-cyan-400/30 relative">
+            <button
+              onClick={() => setAboutOpen(false)}
+              className="absolute top-3 right-3 text-cyan-400 hover:text-cyan-200"
+              aria-label="Close"
+            >
+              <X size={28} />
+            </button>
+            <h2 className="text-2xl font-bold mb-4 text-cyan-300">
+              About Sumarrizr
+            </h2>
+            <p className="mb-4 text-neutral-200">
+              <b>Sumarrizr</b> lets you instantly generate a 100 word summary
+              for PDFs, docs, PPTs, videos, and plain text using AI. It’s fast,
+              simple, and free for all!
+            </p>
+            <div className="text-neutral-400">
+              <b>Upcoming features:</b>
+              <ul className="list-disc ml-5 mt-1 space-y-1">
+                <li>Support for more file types</li>
+                <li>Multi-language support</li>
+                <li>Summarize web articles and images</li>
+                <li>User accounts for history/favorites</li>
+                <li>Export summaries to PDF/Word</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ export default function Tabs({ current, setCurrent }) {
     { id: "text", label: "Text" },
     { id: "docs", label: "Docs" },
     { id: "pptx", label: "PPTs" },
+    { id: "excel", label: "Excel" }
   ];
 
   return (
