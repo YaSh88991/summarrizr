@@ -1,3 +1,4 @@
+import React from 'react';
 export default function Tabs({ current, setCurrent }) {
   const tabs = [
     { id: "pdf", label: "PDF" },

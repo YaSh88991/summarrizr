@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import Loader from "./Loader";
 import FileUploader from "./FileUploader";
 import { handleSummarizeAPI } from "../utils/handleSummary";

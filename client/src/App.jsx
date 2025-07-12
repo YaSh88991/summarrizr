@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import bg_summ from "./assets/bg_summ.mp4";
 import Tabs from "./components/Tabs";

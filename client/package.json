@@ -11,8 +11,6 @@
     "twinit": "tailwindcss init -p"
   },
   "dependencies": {
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
