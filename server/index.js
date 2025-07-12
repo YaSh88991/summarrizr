@@ -2,7 +2,9 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
-const {YoutubeLoader,} = require("@langchain/community/document_loaders/web/youtube");
+const {
+  YoutubeLoader,
+} = require("@langchain/community/document_loaders/web/youtube");
 const { splitBySentence } = require("./utils/textUtils");
 const { getSummaryFromOpenAI } = require("./utils/openai");
 const { detectPlatform } = require("./utils/detectPlatform");
@@ -21,7 +23,7 @@ const storage = multer.diskStorage({
     // Get original extension
     const ext = path.extname(file.originalname);
     cb(null, `${file.fieldname}-${Date.now()}${ext}`);
-  }
+  },
 });
 
 const upload = multer({ storage });
@@ -151,10 +153,41 @@ app.post("/api/summarize/text", async (req, res) => {
       .json({ error: "Please enter some text to summarize." });
   }
 
+  //Block generic or irrelevant queries
+  const irrelevantPatterns = [
+    /who\s+are\s+you/i,
+    /tell me a joke/i,
+    /what\s+is\s+your\s+name/i,
+    /write.*poem/i,
+    /write.*story/i,
+    /draw.*picture/i,
+    /what\s+can\s+you\s+do/i,
+    /how\s+are\s+you/i,
+    /hi\b|hello\b|hey\b/i,
+    /^summarize\s*$/i,
+    /^help\s*$/i,
+    /motivate/i,
+    /advice/i,
+    /recommend/i,
+    /suggest/i,
+    /chat/i,
+    /conversation/i,
+    /explain.*ai/i,
+    /who.*made.*you/i,
+    /what.*is.*this/i,
+    /what.*are.*you/i,
+  ];
+
+  if (irrelevantPatterns.some((pat) => pat.test(text))) {
+    return res.status(400).json({
+      error: "Please enter actual text to summarize, not a general query.",
+    });
+  }
+
   try {
     // 2. If short text, summarize directly
     if (text.length < MAX_TOKENS) {
-      const prompt = `Summarize the following text in around 100 words:\n---\n${text}`;
+      const prompt = `If the following text is not an article, essay, or content to summarize, reply: "Please provide a valid text to summarize." Otherwise, summarize the following text in around 100 words:\n---\n${text}`;
       const summary = await getSummaryFromOpenAI(prompt);
       return res.json({ summary });
     }
@@ -201,7 +234,7 @@ app.post("/api/summarize/pdf", upload.single("file"), async (req, res) => {
   };
 
   try {
-    officeParser.parseOffice(req.file.path, async function(data, err) {
+    officeParser.parseOffice(req.file.path, async function (data, err) {
       // Clean up as soon as possible!
       cleanupFile(req.file.path);
 
@@ -210,7 +243,9 @@ app.post("/api/summarize/pdf", upload.single("file"), async (req, res) => {
         return res.status(500).json({ error: "Failed to read PDF file." });
       }
       if (!data || typeof data !== "string" || data.trim().length === 0) {
-        return res.status(400).json({ error: "Could not extract text from PDF." });
+        return res
+          .status(400)
+          .json({ error: "Could not extract text from PDF." });
       }
 
       const MAX_TOKENS = 9000;
@@ -243,7 +278,9 @@ app.post("/api/summarize/pdf", upload.single("file"), async (req, res) => {
         return res.json({ summary: finalSummary });
       } catch (err) {
         console.error("Summary error:", err);
-        return res.status(500).json({ error: "Failed to summarize PDF content." });
+        return res
+          .status(500)
+          .json({ error: "Failed to summarize PDF content." });
       }
     });
   } catch (err) {
@@ -267,7 +304,7 @@ app.post("/api/summarize/docs", upload.single("file"), async (req, res) => {
   };
 
   try {
-    officeParser.parseOffice(req.file.path, async function(data, err) {
+    officeParser.parseOffice(req.file.path, async function (data, err) {
       // Clean up as soon as possible!
       cleanupFile(req.file.path);
 
@@ -276,7 +313,9 @@ app.post("/api/summarize/docs", upload.single("file"), async (req, res) => {
         return res.status(500).json({ error: "Failed to read Docs file." });
       }
       if (!data || typeof data !== "string" || data.trim().length === 0) {
-        return res.status(400).json({ error: "Could not extract text from document!" });
+        return res
+          .status(400)
+          .json({ error: "Could not extract text from document!" });
       }
 
       const MAX_TOKENS = 9000;
@@ -309,7 +348,9 @@ app.post("/api/summarize/docs", upload.single("file"), async (req, res) => {
         return res.json({ summary: finalSummary });
       } catch (err) {
         console.error("Summary error:", err);
-        return res.status(500).json({ error: "Failed to summarize Docs content." });
+        return res
+          .status(500)
+          .json({ error: "Failed to summarize Docs content." });
       }
     });
   } catch (err) {
@@ -318,7 +359,6 @@ app.post("/api/summarize/docs", upload.single("file"), async (req, res) => {
     return res.status(500).json({ error: "Internal server error." });
   }
 });
-
 
 //main summarize api for pptx
 app.post("/api/summarize/pptx", upload.single("file"), async (req, res) => {
@@ -334,16 +374,20 @@ app.post("/api/summarize/pptx", upload.single("file"), async (req, res) => {
   };
 
   try {
-    officeParser.parseOffice(req.file.path, async function(data, err) {
+    officeParser.parseOffice(req.file.path, async function (data, err) {
       // Clean up as soon as possible!
       cleanupFile(req.file.path);
 
       if (err) {
         console.error("Officeparser error:", err);
-        return res.status(500).json({ error: "Failed to read presentation file." });
+        return res
+          .status(500)
+          .json({ error: "Failed to read presentation file." });
       }
       if (!data || typeof data !== "string" || data.trim().length === 0) {
-        return res.status(400).json({ error: "Could not extract text from ppt!" });
+        return res
+          .status(400)
+          .json({ error: "Could not extract text from ppt!" });
       }
 
       const MAX_TOKENS = 9000;
@@ -376,7 +420,9 @@ app.post("/api/summarize/pptx", upload.single("file"), async (req, res) => {
         return res.json({ summary: finalSummary });
       } catch (err) {
         console.error("Summary error:", err);
-        return res.status(500).json({ error: "Failed to summarize ppt content." });
+        return res
+          .status(500)
+          .json({ error: "Failed to summarize ppt content." });
       }
     });
   } catch (err) {
@@ -400,7 +446,7 @@ app.post("/api/summarize/excel", upload.single("file"), async (req, res) => {
   };
 
   try {
-    officeParser.parseOffice(req.file.path, async function(data, err) {
+    officeParser.parseOffice(req.file.path, async function (data, err) {
       // Clean up as soon as possible!
       cleanupFile(req.file.path);
 
@@ -409,7 +455,9 @@ app.post("/api/summarize/excel", upload.single("file"), async (req, res) => {
         return res.status(500).json({ error: "Failed to read Excel file." });
       }
       if (!data || typeof data !== "string" || data.trim().length === 0) {
-        return res.status(400).json({ error: "Could not extract text from Excel!" });
+        return res
+          .status(400)
+          .json({ error: "Could not extract text from Excel!" });
       }
 
       const MAX_TOKENS = 9000;
@@ -442,7 +490,9 @@ app.post("/api/summarize/excel", upload.single("file"), async (req, res) => {
         return res.json({ summary: finalSummary });
       } catch (err) {
         console.error("Summary error:", err);
-        return res.status(500).json({ error: "Failed to summarize Excel content." });
+        return res
+          .status(500)
+          .json({ error: "Failed to summarize Excel content." });
       }
     });
   } catch (err) {
