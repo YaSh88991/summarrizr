@@ -204,8 +204,7 @@ export default function App() {
         </div>
       </main>
       <footer className="w-full py-4 text-center text-sm text-neutral-400 bg-neutral-950/60 border-t border-neutral-800/60">
-        &copy; {new Date().getFullYear()} Sumarrise &mdash; Built for devs, by
-        devs.
+        &copy; {new Date().getFullYear()} Sumarrise &mdash; Built for all, by a dev who is just learning...
       </footer>
       {aboutOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
