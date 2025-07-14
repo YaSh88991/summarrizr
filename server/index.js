@@ -15,6 +15,11 @@ const path = require("path");
 
 //Work around for officeparser as extension was not getting preserved, so it was giving err in parsing as unrecognized file type.
 // Custom storage config
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");

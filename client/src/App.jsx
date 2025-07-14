@@ -3,7 +3,7 @@ import { Menu, X } from "lucide-react";
 import bg_summ from "./assets/bg_summ.mp4";
 import Tabs from "./components/Tabs";
 import VideoSummarizer from "./components/VideoSummarizr";
-import TextSummarizer from "./components/textSummarizr";
+import TextSummarizer from "./components/TextSummarizr";
 import PdfSummarizr from "./components/PdfSummarizr";
 import DocsSummarizr from "./components/DocsSummarizr";
 import PptSummarizr from "./components/PptSummarizr";

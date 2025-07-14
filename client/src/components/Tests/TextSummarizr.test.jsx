@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import TextSummarizer from "../textSummarizr";
+import TextSummarizer from "../TextSummarizr";
 
 // Mock dependencies
 jest.mock("../../utils/handleSummary", () => ({
