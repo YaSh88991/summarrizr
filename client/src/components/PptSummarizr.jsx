@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { handleCopyToClipboard } from "../utils/copyToClipboard";
 import Loader from "./Loader";
 import FileUploader from "./FileUploader";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 5MB
 
@@ -57,7 +58,7 @@ export default function PptSummarizr({ summaryRef, triggerScroll }) {
     formData.append("file", file);
 
     try {
-      const res = await fetch("http://localhost:5000/api/summarize/pptx", {
+      const res = await fetch(`${API_URL}/api/summarize/pptx`, {
         method: "POST",
         body: formData,
       });

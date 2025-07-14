@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { handleCopyToClipboard } from "../utils/copyToClipboard";
 import FileUploader from "./FileUploader";
 import Loader from "./Loader";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -57,7 +58,7 @@ export default function PdfSummarizr({ summaryRef, triggerScroll }) {
     formData.append("file", file);
 
     try {
-      const res = await fetch("http://localhost:5000/api/summarize/pdf", {
+      const res = await fetch(`${API_URL}/api/summarize/pdf`, {
         method: "POST",
         body: formData,
       });

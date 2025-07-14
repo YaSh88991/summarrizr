@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Loader from "./Loader";
 import { handleSummarizeAPI } from "../utils/handleSummary";
 import {handleCopyToClipboard} from "../utils/copyToClipboard"
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function VideoSummarizer({ summaryRef, triggerScroll }) {
   const [videoUrl, setVideoUrl] = useState("");
@@ -11,7 +12,7 @@ export default function VideoSummarizer({ summaryRef, triggerScroll }) {
   const [copied, setCopied] = useState(false);
 
   const handleSummarize = () => handleSummarizeAPI({
-      endPoint : "http://localhost:5000/api/summarize/video",
+      endPoint : `${API_URL}/api/summarize/video`,
       payload  : {url : videoUrl},
       setSummary,
       setError,

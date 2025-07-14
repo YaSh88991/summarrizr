@@ -3,6 +3,7 @@ import Loader from "./Loader";
 import FileUploader from "./FileUploader";
 import { handleSummarizeAPI } from "../utils/handleSummary";
 import { handleCopyToClipboard } from "../utils/copyToClipboard";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -62,7 +63,7 @@ export default function TextSummarizer({ summaryRef, triggerScroll }) {
 
   const handleSummarize = () =>
     handleSummarizeAPI({
-      endPoint: "http://localhost:5000/api/summarize/text",
+      endPoint: `${API_URL}/api/summarize/text`,
       payload: { text },
       setSummary,
       setError,
