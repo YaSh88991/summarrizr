@@ -164,10 +164,7 @@ app.post("/api/summarize/text", async (req, res) => {
     /what\s+can\s+you\s+do/i,
     /how\s+are\s+you/i,
     /hi\b|hello\b|hey\b/i,
-    /^summarize\s*$/i,
-    /^help\s*$/i,
     /motivate/i,
-    /advice/i,
     /recommend/i,
     /suggest/i,
     /chat/i,
@@ -187,7 +184,7 @@ app.post("/api/summarize/text", async (req, res) => {
   try {
     // 2. If short text, summarize directly
     if (text.length < MAX_TOKENS) {
-      const prompt = `If the following text is not an article, essay, or content to summarize, reply: "Please provide a valid text to summarize." Otherwise, summarize the following text in around 100 words:\n---\n${text}`;
+      const prompt = `Summarize the following text in around 100 words:\n---\n${text}`;
       const summary = await getSummaryFromOpenAI(prompt);
       return res.json({ summary });
     }
