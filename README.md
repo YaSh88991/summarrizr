@@ -49,6 +49,12 @@ cd ../client
 npm install
 ```
 
+**Note:** If you encounter errors during installation, try:
+
+```bash
+npm install --legacy-peer-deps
+```
+
 ### 3. Set up environment variables
 
 - **Backend:**  
