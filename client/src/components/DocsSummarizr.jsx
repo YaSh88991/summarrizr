@@ -86,7 +86,7 @@ export default function DocsSummarizr({ summaryRef, triggerScroll }) {
   return (
     <div className="w-full max-w-6xl bg-[#111827]/95 rounded-3xl shadow-2xl p-10 flex flex-col items-center border border-cyan-200/25 ring-2 ring-cyan-400/10 backdrop-blur-xl transition-all hover:scale-[1.01] hover:shadow-[0_4px_60px_0_rgba(0,255,255,0.25)]">
       <h1 className="text-5xl font-black mb-8 text-center tracking-tight bg-gradient-to-r from-cyan-300 via-teal-300 to-white bg-clip-text text-transparent drop-shadow-lg">
-        Sumarrise
+        Summarize now!
       </h1>
       <FileUploader
         accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"

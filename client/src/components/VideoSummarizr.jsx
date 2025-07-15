@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import Loader from "./Loader";
+import { Link as LinkIcon } from "lucide-react";
 import { handleSummarizeAPI } from "../utils/handleSummary";
-import {handleCopyToClipboard} from "../utils/copyToClipboard"
+import { handleCopyToClipboard } from "../utils/copyToClipboard";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export default function VideoSummarizer({ summaryRef, triggerScroll }) {
@@ -11,34 +12,40 @@ export default function VideoSummarizer({ summaryRef, triggerScroll }) {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const handleSummarize = () => handleSummarizeAPI({
-      endPoint : `${API_URL}/api/summarize/video`,
-      payload  : {url : videoUrl},
+  const handleSummarize = () =>
+    handleSummarizeAPI({
+      endPoint: `${API_URL}/api/summarize/video`,
+      payload: { url: videoUrl },
       setSummary,
       setError,
       setLoading,
-      triggerScroll
-  });
+      triggerScroll,
+    });
 
   const handleCopy = () => handleCopyToClipboard(summary, setCopied);
 
   return (
     <div className="w-full max-w-6xl bg-[#111827]/95 rounded-3xl shadow-2xl p-10 flex flex-col items-center border border-cyan-200/25 ring-2 ring-cyan-400/10 backdrop-blur-xl transition-all hover:scale-[1.01] hover:shadow-[0_4px_60px_0_rgba(0,255,255,0.25)]">
       <h1 className="text-5xl font-black mb-8 text-center tracking-tight bg-gradient-to-r from-cyan-300 via-teal-300 to-white bg-clip-text text-transparent drop-shadow-lg">
-        Sumarrise
+        Summarize now!
       </h1>
-      <input
-        type="text"
-        className="w-full px-5 py-3 rounded-lg border border-neutral-700 bg-neutral-950/70 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 transition mb-6 placeholder:text-neutral-400"
-        placeholder="Paste your video URL here"
-        value={videoUrl}
-        onChange={(e) => {
-          setVideoUrl(e.target.value);
-          setSummary("");
-          setError("");
-        }}
-        disabled={loading}
-      />
+      <div className="relative w-full mb-6">
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400">
+          <LinkIcon size={20} />
+        </span>
+        <input
+          type="text"
+          className="w-full pl-12 pr-5 py-3 rounded-lg border border-neutral-700 bg-neutral-950/70 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 transition placeholder:text-neutral-400"
+          placeholder="Paste your video URL here"
+          value={videoUrl}
+          onChange={(e) => {
+            setVideoUrl(e.target.value);
+            setSummary("");
+            setError("");
+          }}
+          disabled={loading}
+        />
+      </div>
       <button
         className="w-full py-3 rounded-lg font-bold text-lg bg-gradient-to-r from-cyan-500 to-teal-400 hover:from-teal-400 hover:to-cyan-500 shadow-xl hover:scale-105 transition-all duration-150 disabled:opacity-50"
         onClick={handleSummarize}
@@ -73,8 +80,10 @@ export default function VideoSummarizer({ summaryRef, triggerScroll }) {
             </div>
           )}
           {error && (
-            <div ref={summaryRef}
-            className="mt-6 w-full flex items-center justify-center gap-2 text-red-400 bg-red-900/40 border border-red-400/40 font-semibold text-center rounded-lg p-4 animate-pulse shadow">
+            <div
+              ref={summaryRef}
+              className="mt-6 w-full flex items-center justify-center gap-2 text-red-400 bg-red-900/40 border border-red-400/40 font-semibold text-center rounded-lg p-4 animate-pulse shadow"
+            >
               <svg
                 className="w-5 h-5 text-red-400 inline-block mr-1"
                 fill="none"

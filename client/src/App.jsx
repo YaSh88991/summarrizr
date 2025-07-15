@@ -14,9 +14,10 @@ export default function App() {
   const [triggerScroll, setTriggerScroll] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [showSettingsMsg, setShowSettingsMsg] = useState(false);
 
   const EXTRA_MENU = [
-    { label: "Settings", onClick: () => {} },
+    { label: "Settings", onClick: () => setShowSettingsMsg(true) },
     { label: "About", onClick: () => setAboutOpen(true) },
   ];
 
@@ -68,7 +69,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-8">
           {/* --- Logo --- */}
           <span className="text-3xl font-extrabold tracking-tight select-none bg-gradient-to-r from-cyan-400 via-teal-300 to-white bg-clip-text text-transparent drop-shadow">
-            Suma<span className="text-white">rrizr</span>
+            Sumarrizr
           </span>
 
           {/* --- Tabs (center, only PC) --- */}
@@ -203,9 +204,23 @@ export default function App() {
           )}
         </div>
       </main>
-      <footer className="w-full py-4 text-center text-sm text-neutral-400 bg-neutral-950/60 border-t border-neutral-800/60">
-        &copy; {new Date().getFullYear()} Sumarrise &mdash; Built for all, by a dev who is just learning...
+      <footer className="w-full py-4 text-center text-sm border-t border-neutral-800/60 bg-neutral-950/60">
+        <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-white bg-clip-text text-transparent font-semibold">
+          &copy; {new Date().getFullYear()} Sumarrizr &mdash; Built for all, by
+          a dev who is just learning
+          <span className="mx-2 text-cyan-300">|</span>
+          <a
+            href="https://github.com/YaSh88991/summarrizr"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub
+          </a>
+          <span className="mx-2 text-cyan-300">|</span>
+          <a href="mailto:vermayash8786@gmail.com">Contact</a>
+        </span>
       </footer>
+
       {aboutOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-[#161d26] rounded-2xl p-8 max-w-lg w-full shadow-xl border border-cyan-400/30 relative">
@@ -234,6 +249,23 @@ export default function App() {
                 <li>Export summaries to PDF/Word</li>
               </ul>
             </div>
+          </div>
+        </div>
+      )}
+      {showSettingsMsg && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#161d26] rounded-2xl p-8 max-w-xs w-full shadow-xl border border-cyan-400/30 relative text-center">
+            <button
+              onClick={() => setShowSettingsMsg(false)}
+              className="absolute top-3 right-3 text-cyan-400 hover:text-cyan-200"
+              aria-label="Close"
+            >
+              <X size={28} />
+            </button>
+            <h2 className="text-xl font-bold mb-4 text-cyan-300">Settings</h2>
+            <p className="mb-2 text-neutral-200">
+              We’re working on adding more settings options. Stay tuned!
+            </p>
           </div>
         </div>
       )}
